@@ -1,6 +1,7 @@
 const Event = require('../models/Event');
 const Attendee = require('../models/Attendee');
 const socket = require('../config/socket');
+const { uploadToCloudinary } = require('../config/cloudinary');
 const { sendEventUpdateEmail, sendEventCancellationEmail } = require('../services/emailService');
 
 /**
@@ -39,12 +40,18 @@ const getEvents = async (req, res, next) => {
 const createEvent = async (req, res, next) => {
   try {
     const { title, type, date, time, location, description } = req.body;
-    
-    // Récupération des URLs d'images uploadées sur Cloudinary
-    const images = req.files ? req.files.map(file => file.path) : [];
+
+    // Upload de chaque image en mémoire vers Cloudinary v2
+    const imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const result = await uploadToCloudinary(file.buffer, 'meetnova/events');
+        imageUrls.push(result.secure_url);
+      }
+    }
 
     const newEvent = await Event.create({
-      title, type, date, time, location, description, images
+      title, type, date, time, location, description, images: imageUrls
     });
 
     // Notification en temps réel via Socket.io
@@ -61,10 +68,15 @@ const updateEvent = async (req, res, next) => {
   const { id } = req.params;
   try {
     const updateData = { ...req.body };
-    
-    // Si de nouvelles images sont envoyées
+
+    // Si de nouvelles images sont envoyées, on les uploade sur Cloudinary v2
     if (req.files && req.files.length > 0) {
-      updateData.images = req.files.map(file => file.path);
+      const imageUrls = [];
+      for (const file of req.files) {
+        const result = await uploadToCloudinary(file.buffer, 'meetnova/events');
+        imageUrls.push(result.secure_url);
+      }
+      updateData.images = imageUrls;
     }
 
     const updatedEvent = await Event.findByIdAndUpdate(id, updateData, { new: true }).lean();
@@ -77,7 +89,7 @@ const updateEvent = async (req, res, next) => {
     // Notification en temps réel
     socket.getIO().emit('event:updated', updatedEvent);
 
-    // Notification des inscrits par email
+    // Notification des inscrits par email (non-bloquant)
     notifyParticipants(id, 'updated', updatedEvent);
 
     res.status(200).json({ success: true, data: updatedEvent });
