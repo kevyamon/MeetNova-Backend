@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { loginAdmin, logoutAdmin } = require('../controllers/authController');
+const { loginAdmin, logoutAdmin, refreshAccessToken } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const rateLimit = require('express-rate-limit');
 
@@ -19,8 +19,11 @@ const loginLimiter = rateLimit({
 
 // GET /api/auth/status - Pour vérifier si la session est toujours valide
 router.get('/status', protect, (req, res) => {
-  res.status(200).json({ status: 'Authenticated' });
+  res.status(200).json({ status: 'Authenticated', admin: req.admin });
 });
+
+// GET /api/auth/refresh - Pour renouveler l'access token
+router.get('/refresh', refreshAccessToken);
 
 // POST /api/auth/login
 router.post('/login', loginLimiter, loginAdmin);

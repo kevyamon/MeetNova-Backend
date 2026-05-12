@@ -1,41 +1,80 @@
+const Admin = require('../models/Admin');
 const { generateToken, generateRefreshToken } = require('../utils/generateToken');
+const jwt = require('jsonwebtoken');
 
 /**
  * Pourquoi : Gérer l'authentification admin avec une sécurité renforcée.
- * Le mot de passe admin est vérifié contre une variable d'environnement (ADMIN_PWD).
- * On utilise des cookies httpOnly pour le Refresh Token afin de prévenir les attaques XSS.
+ * On vérifie l'email fourni et on le valide via le mot de passe maître (ADMIN_PWD).
+ * Si le mail n'existe pas et le mot de passe est bon, on l'inscrit automatiquement.
  */
 
 const loginAdmin = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
-    // 1. Vérification simple : Email fourni et password correspond à l'ADMIN_PWD
-    // (Dans un système plus complexe, on chercherait l'admin en DB)
-    if (password === process.env.ADMIN_PWD) {
-      
-      const accessToken = generateToken(email);
-      const refreshToken = generateRefreshToken(email);
-
-      // 2. Stockage du Refresh Token dans un cookie sécurisé (httpOnly)
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Uniquement en HTTPS en prod
-        sameSite: 'strict',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
-      });
-
-      res.status(200).json({
-        success: true,
-        accessToken,
-        message: 'Authentification réussie'
-      });
-    } else {
-      res.status(401);
-      throw new Error('Email ou mot de passe incorrect');
+    if (!email || !password) {
+      res.status(400);
+      throw new Error('Veuillez fournir un email et un mot de passe');
     }
+
+    // 1. Vérification contre le mot de passe maître
+    if (password !== process.env.ADMIN_PWD) {
+      res.status(401);
+      throw new Error('Mot de passe administrateur incorrect');
+    }
+
+    // 2. Recherche ou inscription automatique (Auto-Registration)
+    let admin = await Admin.findOne({ email });
+    if (!admin) {
+      admin = await Admin.create({ email });
+    }
+
+    // 3. Génération des tokens
+    const accessToken = generateToken(admin.email);
+    const refreshToken = generateRefreshToken(admin.email);
+
+    // 4. Stockage du Refresh Token dans un cookie sécurisé (httpOnly)
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
+    });
+
+    res.status(200).json({
+      success: true,
+      accessToken,
+      admin: { email: admin.email },
+      message: 'Authentification réussie'
+    });
   } catch (error) {
     next(error);
+  }
+};
+
+// Route pour rafraîchir l'Access Token sans se reconnecter
+const refreshAccessToken = async (req, res, next) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  try {
+    if (!refreshToken) {
+      res.status(401);
+      throw new Error('Aucun token de rafraîchissement trouvé');
+    }
+
+    // Vérifier le refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    
+    // Générer un nouvel Access Token
+    const accessToken = generateToken(decoded.email);
+
+    res.status(200).json({
+      success: true,
+      accessToken
+    });
+  } catch (error) {
+    res.status(401);
+    next(new Error('Session expirée, veuillez vous reconnecter'));
   }
 };
 
@@ -47,4 +86,4 @@ const logoutAdmin = (req, res) => {
   res.status(200).json({ message: 'Déconnexion réussie' });
 };
 
-module.exports = { loginAdmin, logoutAdmin };
+module.exports = { loginAdmin, logoutAdmin, refreshAccessToken };
