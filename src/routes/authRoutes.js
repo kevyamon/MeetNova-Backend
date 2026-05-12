@@ -11,10 +11,13 @@ const rateLimit = require('express-rate-limit');
 
 const loginLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
-  max: 10, // 10 tentatives max par IP
+  max: 30, // 30 tentatives max
+  keyGenerator: (req) => req.body.email || req.ip, // Bloque par email, sinon par IP en dernier recours
   message: {
-    message: "Trop de tentatives de connexion, réessayez dans une heure."
-  }
+    message: "Trop de tentatives de connexion pour ce compte, réessayez dans une heure."
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 // GET /api/auth/status - Pour vérifier si la session est toujours valide
