@@ -1,39 +1,38 @@
 const { generateTicketTemplate, generateEventUpdateTemplate, generateEventCancellationTemplate } = require('../utils/emailTemplate');
+const axios = require('axios');
 
 /**
  * Pourquoi : Contournement Pare-feu Cloud (comme sur Yely)
  * Le port SMTP 587 est souvent bloqué. On utilise directement l'API REST de Brevo via HTTPS.
+ * STRICTE RÉPLICATION DE YELY UTILISANT AXIOS.
  */
 
 const sendBrevoEmail = async (toEmail, subject, htmlContent) => {
   try {
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'accept': 'application/json',
-        'api-key': process.env.BREVO_API_KEY,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
+    await axios.post(
+      'https://api.brevo.com/v3/smtp/email',
+      {
         sender: { 
-          email: process.env.BREVO_SENDER_EMAIL, 
+          email: process.env.BREVO_SENDER_EMAIL || "noreply@meetnova.com", 
           name: process.env.BREVO_SENDER_NAME || "MeetNova" 
         },
         to: [{ email: toEmail }],
         subject: subject,
         htmlContent: htmlContent
-      })
-    });
-
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(`HTTP ${response.status} - ${errorData}`);
-    }
-
-    return await response.json();
+      },
+      {
+        headers: {
+          'accept': 'application/json',
+          'api-key': process.env.BREVO_API_KEY,
+          'content-type': 'application/json'
+        }
+      }
+    );
+    return true;
   } catch (error) {
-    console.error(`[EMAIL ERROR] Echec d'envoi API HTTP à ${toEmail}:`, error.message);
-    throw error;
+    const errorDetails = error.response ? JSON.stringify(error.response.data) : error.message;
+    console.error(`[EMAIL ERROR] Echec d'envoi API HTTP à ${toEmail} :`, errorDetails);
+    throw new Error("Impossible d'envoyer l'email.");
   }
 };
 
