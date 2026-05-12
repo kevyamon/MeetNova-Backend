@@ -30,15 +30,12 @@ const registerAttendee = async (req, res, next) => {
       uuid
     });
 
-    // 5. Envoi de l'email transactionnel (via Service)
-    // Note: On peut décider de ne pas attendre (await) si on veut une réponse ultra rapide,
-    // mais ici on veut être sûr que l'email est envoyé ou au moins loggé comme erreur.
-    try {
-      await sendTicketEmail(newAttendee);
-    } catch (emailError) {
-      // On continue l'exécution, l'utilisateur est inscrit même si l'email a échoué
-      console.error("Email non envoyé, mais inscription réussie.");
-    }
+    // 5. Envoi de l'email transactionnel en arrière-plan (non-bloquant)
+    // Pourquoi : On ne veut pas que l'utilisateur attende que le serveur SMTP réponde
+    // pour valider son inscription. On "tire et on oublie".
+    sendTicketEmail(newAttendee).catch(emailError => {
+      console.error(`Email non envoyé à ${newAttendee.email}:`, emailError.message);
+    });
 
     res.status(201).json({
       success: true,

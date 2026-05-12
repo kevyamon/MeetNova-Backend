@@ -17,20 +17,30 @@ const transporter = nodemailer.createTransport({
   }
 });
 
+// Vérification de la configuration SMTP au démarrage
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("Erreur de configuration SMTP (Brevo) :", error.message);
+  } else {
+    console.log("Serveur SMTP Brevo prêt à envoyer des emails.");
+  }
+});
+
 const sendTicketEmail = async (attendee) => {
   const { email, nom, prenoms, uuid } = attendee;
+  console.log(`Tentative d'envoi de billet à : ${email}...`);
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"${process.env.BREVO_SENDER_NAME}" <${process.env.BREVO_SENDER_EMAIL}>`,
       to: email,
       subject: "MeetNova - Votre billet d'entrée est arrivé !",
       html: generateTicketTemplate(prenoms, nom, uuid)
     });
+    console.log(`Email envoyé avec succès à ${email}. MessageId: ${info.messageId}`);
   } catch (error) {
-    console.error(`Erreur envoi email billet à ${email}:`, error.message);
-    // Non-bloquant : l'inscription reste valide même si l'email échoue
-    throw new Error("Erreur lors de l'envoi de l'email de confirmation");
+    console.error(`ÉCHEC envoi email à ${email}:`, error.message);
+    throw error;
   }
 };
 
