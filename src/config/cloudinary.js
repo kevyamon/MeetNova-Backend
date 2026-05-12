@@ -24,9 +24,7 @@ const uploadToCloudinary = (buffer, folder) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder,
-        resource_type: 'image',
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [{ width: 1200, height: 1200, crop: 'limit', quality: 'auto' }]
+        resource_type: 'auto', // Détection automatique (image, video, raw/pdf)
       },
       (error, result) => {
         if (error) return reject(error);
@@ -41,16 +39,20 @@ const uploadToCloudinary = (buffer, folder) => {
   });
 };
 
-// Multer : stockage en mémoire, limite 20 Mo par fichier
+// Multer : stockage en mémoire, limite 50 Mo pour les vidéos/PDF
 const upload = multer({
   storage: memoryStorage,
-  limits: { fileSize: 20 * 1024 * 1024 },
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    const allowed = [
+      'image/jpeg', 'image/png', 'image/webp', 'image/jpg',
+      'video/mp4', 'video/quicktime', 'video/x-msvideo',
+      'application/pdf'
+    ];
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Format non autorisé. Utilisez JPG, PNG ou WebP.'));
+      cb(new Error('Format non autorisé. Images, MP4 ou PDF uniquement.'));
     }
   }
 });

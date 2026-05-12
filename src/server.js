@@ -71,6 +71,7 @@ app.use('/api/attendees', require('./routes/attendeeRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/scan', require('./routes/scanRoutes'));
 app.use('/api/events', require('./routes/eventRoutes'));
+app.use('/api/news', require('./routes/newsRoutes'));
 
 // Gestion des erreurs
 app.use(notFound);
