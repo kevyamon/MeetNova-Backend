@@ -54,10 +54,22 @@ const createNews = async (req, res, next) => {
 const updateNews = async (req, res, next) => {
   const { id } = req.params;
   try {
-    const updateData = { ...req.body };
+    const { title, content, existingMedia } = req.body;
+    const news = await News.findById(id);
+    if (!news) {
+      res.status(404);
+      throw new Error('Actualité introuvable');
+    }
+
+    if (title) news.title = title;
+    if (content) news.content = content;
+
+    let finalMedia = [];
+    if (existingMedia) {
+      finalMedia = JSON.parse(existingMedia);
+    }
 
     if (req.files && req.files.length > 0) {
-      const mediaList = [];
       for (const file of req.files) {
         const result = await uploadToCloudinary(file.buffer, 'meetnova/news');
         
@@ -65,16 +77,18 @@ const updateNews = async (req, res, next) => {
         if (file.mimetype.startsWith('video/')) type = 'video';
         if (file.mimetype === 'application/pdf') type = 'pdf';
 
-        mediaList.push({
+        finalMedia.push({
           url: result.secure_url,
           type,
           publicId: result.public_id
         });
       }
-      updateData.media = mediaList;
     }
 
-    const updatedNews = await News.findByIdAndUpdate(id, updateData, { new: true }).lean();
+    news.media = finalMedia;
+    await news.save();
+
+    const updatedNews = news.toObject();
 
     if (!updatedNews) {
       res.status(404);
