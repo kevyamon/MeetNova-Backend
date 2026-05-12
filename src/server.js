@@ -24,22 +24,33 @@ socketConfig.init(server);
 
 app.use(helmet()); // Protection des headers HTTP
 
-// Configuration CORS dynamique
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:5173'];
+// Configuration CORS dynamique (uniquement via variables d'environnement)
+const allowedOrigins = ['http://localhost:5173']; // Localhost reste par défaut pour le dev
+
+if (process.env.ALLOWED_ORIGINS) {
+  process.env.ALLOWED_ORIGINS.split(',').forEach(origin => {
+    const trimmedOrigin = origin.trim();
+    if (trimmedOrigin && !allowedOrigins.includes(trimmedOrigin)) {
+      allowedOrigins.push(trimmedOrigin);
+    }
+  });
+}
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Autorise les requêtes sans origine (comme Postman ou serveurs mobiles)
+    // Autorise les requêtes sans origine (comme Postman)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error(`[CORS] Origine bloquée : ${origin}`);
       callback(new Error('Non autorisé par CORS'));
     }
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true // Important pour les cookies httpOnly
+  credentials: true 
 }));
 app.use(express.json()); // Parsing JSON avec limite de taille
 app.use(express.urlencoded({ extended: true }));
