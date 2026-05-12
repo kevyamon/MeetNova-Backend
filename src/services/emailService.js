@@ -10,10 +10,10 @@ const { generateTicketTemplate, generateEventUpdateTemplate, generateEventCancel
 const transporter = nodemailer.createTransport({
   host: 'smtp-relay.brevo.com',
   port: 587,
-  secure: false, // TLS STARTTLS
+  secure: false,
   auth: {
-    user: process.env.BREVO_SENDER_EMAIL, // L'email expéditeur Brevo
-    pass: process.env.BREVO_API_KEY       // La clé API Brevo sert de mot de passe SMTP
+    user: 'xkeysib',
+    pass: process.env.BREVO_API_KEY
   }
 });
 
