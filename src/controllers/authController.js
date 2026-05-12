@@ -41,8 +41,9 @@ const loginAdmin = async (req, res, next) => {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 jours
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/',
     });
 
     res.status(200).json({
@@ -85,7 +86,10 @@ const refreshAccessToken = async (req, res, next) => {
 const logoutAdmin = (req, res) => {
   res.cookie('refreshToken', '', {
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none',
     expires: new Date(0),
+    path: '/',
   });
   res.status(200).json({ message: 'Déconnexion réussie' });
 };

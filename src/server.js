@@ -25,7 +25,7 @@ socketConfig.init(server);
 app.use(helmet()); // Protection des headers HTTP
 
 // Configuration CORS dynamique (uniquement via variables d'environnement)
-const allowedOrigins = ['http://localhost:5173']; // Localhost reste par défaut pour le dev
+const allowedOrigins = ['http://localhost:5173'];
 
 if (process.env.ALLOWED_ORIGINS) {
   process.env.ALLOWED_ORIGINS.split(',').forEach(origin => {
@@ -38,7 +38,6 @@ if (process.env.ALLOWED_ORIGINS) {
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Autorise les requêtes sans origine (comme Postman)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.includes(origin)) {
@@ -48,7 +47,7 @@ app.use(cors({
       callback(new Error('Non autorisé par CORS'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true 
 }));
