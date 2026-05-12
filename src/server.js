@@ -46,7 +46,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser()); // Parsing des cookies pour le Refresh Token
 app.use(morgan('dev')); // Logging des requêtes HTTP
 
-// Route de base pour vérification de santé
+// Route racine : répond aux health checks de Render (HEAD /)
+app.get('/', (req, res) => {
+  res.status(200).json({ status: 'OK', name: 'MeetNova API', version: '1.0.0' });
+});
+
+// Route de santé détaillée
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK', message: 'MeetNova API is running' });
 });
