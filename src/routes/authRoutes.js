@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { loginAdmin, logoutAdmin } = require('../controllers/authController');
+const { protect } = require('../middleware/authMiddleware');
 const rateLimit = require('express-rate-limit');
 
 /**
@@ -10,10 +11,15 @@ const rateLimit = require('express-rate-limit');
 
 const loginLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 heure
-  max: 10, // 10 tentatives max par IP (on pourra raffiner par email plus tard)
+  max: 10, // 10 tentatives max par IP
   message: {
     message: "Trop de tentatives de connexion, réessayez dans une heure."
   }
+});
+
+// GET /api/auth/status - Pour vérifier si la session est toujours valide
+router.get('/status', protect, (req, res) => {
+  res.status(200).json({ status: 'Authenticated' });
 });
 
 // POST /api/auth/login
