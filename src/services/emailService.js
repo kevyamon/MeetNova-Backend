@@ -1,43 +1,50 @@
-const nodemailer = require('nodemailer');
 const { generateTicketTemplate, generateEventUpdateTemplate, generateEventCancellationTemplate } = require('../utils/emailTemplate');
 
 /**
- * Pourquoi : Nodemailer via SMTP Brevo est la solution la plus stable et éprouvée.
- * Aucun SDK propriétaire, aucun risque de casse d'API. Brevo fournit un accès SMTP
- * avec la clé API comme mot de passe.
+ * Pourquoi : Contournement Pare-feu Cloud (comme sur Yely)
+ * Le port SMTP 587 est souvent bloqué. On utilise directement l'API REST de Brevo via HTTPS.
  */
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp-relay.brevo.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: 'xkeysib',
-    pass: process.env.BREVO_API_KEY
-  }
-});
+const sendBrevoEmail = async (toEmail, subject, htmlContent) => {
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { 
+          email: process.env.BREVO_SENDER_EMAIL, 
+          name: process.env.BREVO_SENDER_NAME || "MeetNova" 
+        },
+        to: [{ email: toEmail }],
+        subject: subject,
+        htmlContent: htmlContent
+      })
+    });
 
-// Vérification de la configuration SMTP au démarrage
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("Erreur de configuration SMTP (Brevo) :", error.message);
-  } else {
-    console.log("Serveur SMTP Brevo prêt à envoyer des emails.");
+    if (!response.ok) {
+      const errorData = await response.text();
+      throw new Error(`HTTP ${response.status} - ${errorData}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error(`[EMAIL ERROR] Echec d'envoi API HTTP à ${toEmail}:`, error.message);
+    throw error;
   }
-});
+};
 
 const sendTicketEmail = async (attendee) => {
   const { email, nom, prenoms, uuid } = attendee;
   console.log(`Tentative d'envoi de billet à : ${email}...`);
 
   try {
-    const info = await transporter.sendMail({
-      from: `"${process.env.BREVO_SENDER_NAME}" <${process.env.BREVO_SENDER_EMAIL}>`,
-      to: email,
-      subject: "MeetNova - Votre billet d'entrée est arrivé !",
-      html: generateTicketTemplate(prenoms, nom, uuid)
-    });
-    console.log(`Email envoyé avec succès à ${email}. MessageId: ${info.messageId}`);
+    const html = generateTicketTemplate(prenoms, nom, uuid);
+    await sendBrevoEmail(email, "MeetNova - Votre billet d'entrée est arrivé !", html);
+    console.log(`Email envoyé avec succès à ${email}.`);
   } catch (error) {
     console.error(`ÉCHEC envoi email à ${email}:`, error.message);
     throw error;
@@ -46,12 +53,8 @@ const sendTicketEmail = async (attendee) => {
 
 const sendEventUpdateEmail = async (email, prenoms, eventTitle, eventDetails) => {
   try {
-    await transporter.sendMail({
-      from: `"${process.env.BREVO_SENDER_NAME}" <${process.env.BREVO_SENDER_EMAIL}>`,
-      to: email,
-      subject: `Mise à jour de l'événement : ${eventTitle}`,
-      html: generateEventUpdateTemplate(prenoms, eventTitle, eventDetails)
-    });
+    const html = generateEventUpdateTemplate(prenoms, eventTitle, eventDetails);
+    await sendBrevoEmail(email, `Mise à jour de l'événement : ${eventTitle}`, html);
   } catch (error) {
     console.error(`Erreur envoi email mise à jour à ${email}:`, error.message);
   }
@@ -59,12 +62,8 @@ const sendEventUpdateEmail = async (email, prenoms, eventTitle, eventDetails) =>
 
 const sendEventCancellationEmail = async (email, prenoms, eventTitle) => {
   try {
-    await transporter.sendMail({
-      from: `"${process.env.BREVO_SENDER_NAME}" <${process.env.BREVO_SENDER_EMAIL}>`,
-      to: email,
-      subject: `Annulation de l'événement : ${eventTitle}`,
-      html: generateEventCancellationTemplate(prenoms, eventTitle)
-    });
+    const html = generateEventCancellationTemplate(prenoms, eventTitle);
+    await sendBrevoEmail(email, `Annulation de l'événement : ${eventTitle}`, html);
   } catch (error) {
     console.error(`Erreur envoi email annulation à ${email}:`, error.message);
   }
