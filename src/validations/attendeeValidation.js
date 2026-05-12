@@ -13,6 +13,7 @@ const registrationSchema = z.object({
   campus: z.string({ required_error: 'Le campus est requis' }),
   niveau_etude: z.string({ required_error: 'Le niveau d\'étude est requis' }),
   filiere: z.string().min(1, 'La filière est requise').regex(/^[A-Z]+$/, 'La filière doit être en majuscules et ne contenir que des lettres').trim(),
+  event: z.string({ required_error: 'L\'ID de l\'événement est requis' }),
 }).strict(); // Rejette tout champ non défini dans le schéma
 
 module.exports = { registrationSchema };
