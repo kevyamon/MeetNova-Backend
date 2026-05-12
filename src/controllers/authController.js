@@ -17,8 +17,12 @@ const loginAdmin = async (req, res, next) => {
       throw new Error('Veuillez fournir un email et un mot de passe');
     }
 
-    // 1. Vérification contre le mot de passe maître
-    if (password !== process.env.ADMIN_PWD) {
+    // 1. Vérification contre le mot de passe maître (avec trim pour éviter les espaces invisibles)
+    const masterPwd = process.env.ADMIN_PWD ? process.env.ADMIN_PWD.trim() : '';
+    const inputPwd = password.trim();
+
+    if (inputPwd !== masterPwd) {
+      console.log(`[AUTH] Tentative échouée pour ${email}. Longueur saisie: ${inputPwd.length}, Longueur attendue: ${masterPwd.length}`);
       res.status(401);
       throw new Error('Mot de passe administrateur incorrect');
     }
