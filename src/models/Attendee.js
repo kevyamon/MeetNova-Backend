@@ -40,7 +40,7 @@ const attendeeSchema = new mongoose.Schema({
   campus: {
     type: String,
     required: [true, 'Le campus est requis'],
-    enum: ['Loko', 'ABC', 'Plateau', 'Cocody', 'Autre'] // À affiner selon les besoins
+    trim: true
   },
   niveau_etude: {
     type: String,
