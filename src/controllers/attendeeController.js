@@ -25,14 +25,22 @@ const registerAttendee = async (req, res, next) => {
     // 3. Création de l'UUID unique
     const uuid = uuidv4();
 
-    // 4. Enregistrement en base de données
+    // 4. Récupération des infos de l'événement pour calculer la date d'expiration
+    const eventInfo = await Event.findById(validatedData.event).lean();
+    
+    // Calcul de l'expiration : 3 jours après la date de l'événement
+    let expireAtDate = new Date();
+    if (eventInfo && eventInfo.date) {
+      expireAtDate = new Date(eventInfo.date);
+    }
+    expireAtDate.setDate(expireAtDate.getDate() + 3); // Ajoute 3 jours
+
+    // 5. Enregistrement en base de données avec expireAt
     const newAttendee = await Attendee.create({
       ...validatedData,
-      uuid
+      uuid,
+      expireAt: expireAtDate
     });
-
-    // 4.5. Récupération des infos de l'événement
-    const eventInfo = await Event.findById(validatedData.event).lean();
 
     // 5. Envoi de l'email transactionnel en arrière-plan (non-bloquant)
     sendTicketEmail(newAttendee, eventInfo).catch(emailError => {
