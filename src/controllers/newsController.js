@@ -4,6 +4,7 @@ const { uploadToCloudinary } = require('../config/cloudinary');
 
 /**
  * Pourquoi : Gérer les actualités avec support multi-médias.
+ * Optimisation : Envoi d'objets POJO via Socket pour éviter les cycles de sérialisation.
  */
 
 const getNews = async (req, res, next) => {
@@ -43,9 +44,11 @@ const createNews = async (req, res, next) => {
       author: req.admin?._id
     });
 
-    socket.getIO().emit('news:created', newNews);
+    // On transforme en objet simple pour le socket
+    const newsObj = newNews.toObject();
+    socket.getIO().emit('news:created', newsObj);
 
-    res.status(201).json({ success: true, data: newNews });
+    res.status(201).json({ success: true, data: newsObj });
   } catch (error) {
     next(error);
   }
@@ -90,11 +93,6 @@ const updateNews = async (req, res, next) => {
 
     const updatedNews = news.toObject();
 
-    if (!updatedNews) {
-      res.status(404);
-      throw new Error('Actualité introuvable');
-    }
-
     socket.getIO().emit('news:updated', updatedNews);
 
     res.status(200).json({ success: true, data: updatedNews });
@@ -114,6 +112,7 @@ const deleteNews = async (req, res, next) => {
 
     await News.findByIdAndDelete(id);
 
+    // On notifie la suppression en envoyant l'ID
     socket.getIO().emit('news:deleted', id);
 
     res.status(200).json({ success: true, message: 'Actualité supprimée' });
