@@ -81,14 +81,23 @@ const getDashboardStats = async (req, res, next) => {
 
 // Liste des participants avec recherche (GET /api/scan/list)
 const getAttendeesList = async (req, res, next) => {
-  const { search } = req.query;
-  const query = search ? {
-    $or: [
+  const { search, isPresent } = req.query;
+  
+  const query = {};
+  
+  if (search) {
+    query.$or = [
       { nom: { $regex: search, $options: 'i' } },
       { prenoms: { $regex: search, $options: 'i' } },
       { email: { $regex: search, $options: 'i' } }
-    ]
-  } : {};
+    ];
+  }
+
+  if (isPresent === 'true') {
+    query.isPresent = true;
+  } else if (isPresent === 'false') {
+    query.isPresent = false;
+  }
 
   try {
     const attendees = await Attendee.find(query)
