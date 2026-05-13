@@ -64,6 +64,10 @@ const attendeeSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Index TTL (Time-To-Live) : MongoDB supprimera automatiquement le document
+// 30 jours (30 * 24 * 60 * 60 secondes) après sa date de création (createdAt)
+attendeeSchema.index({ createdAt: 1 }, { expireAfterSeconds: 30 * 24 * 60 * 60 });
+
 // Transformation pour le retour JSON (sécurité : on ne renvoie pas le _id interne si non nécessaire)
 attendeeSchema.set('toJSON', {
   transform: (doc, ret) => {

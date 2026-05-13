@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const Attendee = require('../models/Attendee');
+const Event = require('../models/Event');
 const { registrationSchema } = require('../validations/attendeeValidation');
 const { sendTicketEmail } = require('../services/emailService');
 
@@ -30,10 +31,11 @@ const registerAttendee = async (req, res, next) => {
       uuid
     });
 
+    // 4.5. Récupération des infos de l'événement
+    const eventInfo = await Event.findById(validatedData.event).lean();
+
     // 5. Envoi de l'email transactionnel en arrière-plan (non-bloquant)
-    // Pourquoi : On ne veut pas que l'utilisateur attende que le serveur SMTP réponde
-    // pour valider son inscription. On "tire et on oublie".
-    sendTicketEmail(newAttendee).catch(emailError => {
+    sendTicketEmail(newAttendee, eventInfo).catch(emailError => {
       console.error(`Email non envoyé à ${newAttendee.email}:`, emailError.message);
     });
 

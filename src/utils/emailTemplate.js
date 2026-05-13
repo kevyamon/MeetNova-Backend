@@ -3,9 +3,15 @@
  * permet un contrôle total sur le design et la colorimétrie (Rouge MeetNova).
  */
 
-const generateTicketTemplate = (prenoms, nom, uuid) => {
+const generateTicketTemplate = (prenoms, nom, uuid, eventInfo) => {
   const primaryColor = '#FF1E1E'; // Rouge MeetNova
   const secondaryColor = '#111827'; // Noir MeetNova
+
+  const eventTitle = eventInfo?.title || "Événement MeetNova";
+  const eventDate = eventInfo?.date ? new Date(eventInfo.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : "Date à venir";
+  const eventTime = eventInfo?.time || "Heure à venir";
+  const eventLocation = eventInfo?.location || "Lieu à venir";
+  const logoUrl = "https://res.cloudinary.com/dqueeyulc/image/upload/q_auto/f_auto/v1778614213/meetnova/news/vxg1sluzfo8mmy1w1yza.jpg";
 
   return `
     <!DOCTYPE html>
@@ -16,24 +22,32 @@ const generateTicketTemplate = (prenoms, nom, uuid) => {
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
         .container { max-width: 600px; margin: 20px auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .header { background-color: ${secondaryColor}; padding: 30px; text-align: center; color: white; }
+        .header img { max-width: 150px; border-radius: 8px; margin-bottom: 15px; }
         .content { padding: 40px; text-align: center; }
-        .qr-section { background-color: #f9f9f9; padding: 20px; border-radius: 10px; margin: 20px 0; }
+        .event-details { background-color: #f9f9f9; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: left; border-left: 4px solid ${primaryColor}; }
+        .event-details p { margin: 5px 0; font-size: 15px; }
+        .qr-section { background-color: #ffffff; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px dashed #ccc; }
         .footer { background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #777; }
-        .button { background-color: ${primaryColor}; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 20px; }
         h1 { margin: 0; font-size: 24px; }
-        .uuid-text { font-family: monospace; color: ${primaryColor}; font-weight: bold; font-size: 14px; margin-top: 10px; }
+        .uuid-text { font-family: monospace; color: ${primaryColor}; font-weight: bold; font-size: 14px; margin-top: 10px; letter-spacing: 1px; }
       </style>
     </head>
     <body>
       <div class="container">
         <div class="header">
-          <h1>MEETNOVA</h1>
-          <p>Conférence de Lancement</p>
+          <img src="${logoUrl}" alt="MeetNova Logo">
+          <h1>${eventTitle}</h1>
         </div>
         <div class="content">
           <h2>Félicitations ${prenoms} !</h2>
-          <p>Ton inscription à la conférence <strong>NovaTech Loko</strong> est confirmée.</p>
+          <p>Ton inscription à la conférence <strong>${eventTitle}</strong> est confirmée.</p>
           
+          <div class="event-details">
+            <p><strong>📅 Date :</strong> ${eventDate}</p>
+            <p><strong>🕒 Heure :</strong> ${eventTime}</p>
+            <p><strong>📍 Lieu :</strong> ${eventLocation}</p>
+          </div>
+
           <div class="qr-section">
             <p>Voici ton billet d'entrée (QR Code)</p>
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${uuid}" alt="QR Code Billet" style="border: 5px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">

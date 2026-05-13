@@ -36,12 +36,12 @@ const sendBrevoEmail = async (toEmail, subject, htmlContent) => {
   }
 };
 
-const sendTicketEmail = async (attendee) => {
+const sendTicketEmail = async (attendee, eventInfo) => {
   const { email, nom, prenoms, uuid } = attendee;
   console.log(`Tentative d'envoi de billet à : ${email}...`);
 
   try {
-    const html = generateTicketTemplate(prenoms, nom, uuid);
+    const html = generateTicketTemplate(prenoms, nom, uuid, eventInfo);
     await sendBrevoEmail(email, "MeetNova - Votre billet d'entrée est arrivé !", html);
     console.log(`Email envoyé avec succès à ${email}.`);
   } catch (error) {
