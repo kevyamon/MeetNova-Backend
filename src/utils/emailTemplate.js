@@ -26,10 +26,10 @@ const generateTicketTemplate = (prenoms, nom, uuid, eventInfo) => {
         .content { padding: 40px; text-align: center; }
         .event-details { background-color: #f9f9f9; padding: 15px; border-radius: 10px; margin: 20px 0; text-align: left; border-left: 4px solid ${primaryColor}; }
         .event-details p { margin: 5px 0; font-size: 15px; }
-        .qr-section { background-color: #ffffff; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px dashed #ccc; }
+        .qr-section { background-color: #ffffff; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px dashed #ccc; text-align: center; }
         .footer { background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #777; }
         h1 { margin: 0; font-size: 24px; }
-        .uuid-text { font-family: monospace; color: ${primaryColor}; font-weight: bold; font-size: 14px; margin-top: 10px; letter-spacing: 1px; }
+        .uuid-text { font-family: monospace; color: ${primaryColor}; font-weight: bold; font-size: 14px; margin-top: 10px; letter-spacing: 1px; text-align: center; }
       </style>
     </head>
     <body>
@@ -47,10 +47,10 @@ const generateTicketTemplate = (prenoms, nom, uuid, eventInfo) => {
             <p><strong>🕒 Heure :</strong> ${eventTime}</p>
             <p><strong>📍 Lieu :</strong> ${eventLocation}</p>
           </div>
-
+ 
           <div class="qr-section">
             <p>Voici ton billet d'entrée (QR Code)</p>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${uuid}" alt="QR Code Billet" style="border: 5px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${uuid}" alt="QR Code Billet" style="display: block; margin: 0 auto; border: 5px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
             <div class="uuid-text">ID: ${uuid}</div>
           </div>
 
