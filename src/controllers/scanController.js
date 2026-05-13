@@ -14,13 +14,13 @@ const validateScan = async (req, res, next) => {
 
     if (!attendee) {
       res.status(404);
-      throw new Error('⚠️ CODE INVALIDE OU FALSIFIÉ');
+      throw new Error('CODE INVALIDE OU FALSIFIÉ');
     }
 
     if (attendee.isPresent) {
       res.status(400).json({
         success: false,
-        message: '❌ BILLET DÉJÀ SCANNÉ',
+        message: 'BILLET DÉJÀ SCANNÉ',
         scannedAt: attendee.scannedAt,
         nom: attendee.nom,
         prenoms: attendee.prenoms
@@ -35,7 +35,7 @@ const validateScan = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: '✅ ACCÈS AUTORISÉ',
+      message: 'ACCÈS AUTORISÉ',
       data: {
         nom: attendee.nom,
         prenoms: attendee.prenoms,
