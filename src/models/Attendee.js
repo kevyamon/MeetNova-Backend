@@ -2,7 +2,9 @@ const mongoose = require('mongoose');
 
 /**
  * Pourquoi : Le modèle Attendee centralise toutes les informations des participants.
- * L'utilisation d'un index unique sur l'email et l'UUID garantit l'intégrité des données.
+ * L'utilisation d'un index composé sur l'email et l'événement garantit qu'un participant
+ * ne peut s'inscrire qu'une seule fois à un même événement, tout en lui permettant
+ * de s'inscrire à d'autres événements de la plateforme.
  */
 const attendeeSchema = new mongoose.Schema({
   uuid: {
@@ -29,7 +31,6 @@ const attendeeSchema = new mongoose.Schema({
   email: {
     type: String,
     required: [true, "L'email est requis"],
-    unique: true,
     trim: true,
     lowercase: true,
     match: [
@@ -68,8 +69,10 @@ const attendeeSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Index composé unique : Un email ne peut s'inscrire qu'une fois par événement
+attendeeSchema.index({ event: 1, email: 1 }, { unique: true });
+
 // Index TTL : MongoDB supprimera automatiquement le document à la date exacte stockée dans `expireAt`
-// (qui sera calculée à la création comme étant : Date de l'événement + 3 jours)
 attendeeSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 
 // Transformation pour le retour JSON (sécurité : on ne renvoie pas le _id interne si non nécessaire)

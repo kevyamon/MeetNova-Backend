@@ -6,8 +6,8 @@ const { sendTicketEmail } = require('../services/emailService');
 
 /**
  * Pourquoi : Le contrôleur orchestre la requête. Il valide les données, 
- * appelle les services nécessaires et renvoie la réponse. 
- * Il ne contient pas de logique métier complexe (déléguée aux services si besoin).
+ * appelle les services nécessaires et renvoie la réponse.
+ * La vérification d'existence est désormais scopée à l'événement spécifique.
  */
 
 const registerAttendee = async (req, res, next) => {
@@ -15,11 +15,15 @@ const registerAttendee = async (req, res, next) => {
     // 1. Validation des données entrantes
     const validatedData = registrationSchema.parse(req.body);
 
-    // 2. Vérification de l'existence de l'email (Éviter les doublons)
-    const existingAttendee = await Attendee.findOne({ email: validatedData.email }).lean();
+    // 2. Vérification de l'existence de l'email pour CET événement précis
+    const existingAttendee = await Attendee.findOne({ 
+      email: validatedData.email, 
+      event: validatedData.event 
+    }).lean();
+
     if (existingAttendee) {
       res.status(400);
-      throw new Error('Cet email est déjà utilisé pour une inscription.');
+      throw new Error('Cet email est déjà inscrit à cet événement.');
     }
 
     // 3. Création de l'UUID unique
@@ -42,7 +46,7 @@ const registerAttendee = async (req, res, next) => {
       expireAt: expireAtDate
     });
 
-    // 5. Envoi de l'email transactionnel en arrière-plan (non-bloquant)
+    // 6. Envoi de l'email transactionnel en arrière-plan (non-bloquant)
     sendTicketEmail(newAttendee, eventInfo).catch(emailError => {
       console.error(`Email non envoyé à ${newAttendee.email}:`, emailError.message);
     });
